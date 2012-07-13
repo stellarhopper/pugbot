@@ -636,7 +636,7 @@ def getWinStats(userName):
 
 def help(userName, params):
     global adminCommands, userCommands
-    send("PRIVMSG " + config.channel + " : \x0311,01User related commands:\x030,01 !add, !game, !ip, !last, !limit, !list, !man, !mumble, !need, !needsub, !players, !remove, !scramble, !stats, !status, !sub")
+    send("PRIVMSG " + config.channel + " : \x0311,01User related commands:\x030,01 !add, !game, !ip, !last, !limit, !list, !man, !mumble, !need, !needsub, !players, !remove, !scramble, !stats, !stats me, !status, !sub")
     send("PRIVMSG " + config.channel + " : \x0311,01Captain related commands:\x030,01 !captain, !pick")
     if isAdmin(userName):
         send("PRIVMSG %s : \x0311,01Admin related commands:\x030,01 %s" % (config.channel, ", ".join(adminCommands)))
@@ -837,16 +837,15 @@ def listeningTF2Servers():
                 needsub('', queryData[i][0])
                 cursor.execute('DELETE FROM srcds WHERE time = %s', (queryData[i][1],))
                 cursor.execute('COMMIT;')
-            for pastGame in pastGames:
-                if pastGame['server'] == server or pastGame['server'] == getDNSFromIP(ip) + ':' + port:
-                    if re.search('^!gameover', srcdsData[0]):
-                        score = srcdsData[1]
-                        clearSubstitutes(ip, port)
-                        updateLast(ip, port, 0)
-                        updateStats(ip, port, score)
-                        send("PRIVMSG " + config.channel + " :\x030,01Game over on server \"" + getDNSFromIP(ip) + ":" + port + "\", final score is: \x0311,01" + score.split(':')[0] + "\x030,01 to \x034,01" + score.split(':')[1] + "\x030,01.")
-                    cursor.execute('DELETE FROM srcds WHERE time = %s', (queryData[i][1],))
-                    cursor.execute('COMMIT;')
+                pastGames['server'] == server or pastGames['server'] == getDNSFromIP(ip) + ':' + port
+                re.search('^!gameover', srcdsData[0])
+                score = srcdsData[1]
+                clearSubstitutes(ip, port)
+                updateLast(ip, port, 0)
+                updateStats(ip, port, score)
+                send("PRIVMSG " + config.channel + " :\x030,01Game over on server \"" + getDNSFromIP(ip) + ":" + port + "\", final score is: \x0311,01" + score.split(':')[0] + "\x030,01 to \x034,01" + score.split(':')[1] + "\x030,01.")
+                cursor.execute('DELETE FROM srcds WHERE time = %s', (queryData[i][1],))
+                cursor.execute('COMMIT;')
             if time.time() - queryData[i][1] >= 20:
                 cursor.execute('DELETE FROM srcds WHERE time = %s', (queryData[i][1],))
                 cursor.execute('COMMIT;')
@@ -1174,7 +1173,7 @@ def resetVariables():
     teamB = []
     print 'Reset variables.'
 
-def restartBot():
+def restartBot(userName, params=''):
     global restart
     restart = 1
 
