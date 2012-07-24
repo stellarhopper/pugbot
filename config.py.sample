@@ -1,0 +1,34 @@
+#IRC
+channel = "#tf2.pug.euhl"
+network = "irc.quakenet.org"
+port = 6667
+
+#Passwords
+databasePassword = "jw8s0F4"
+gamesurgeUser = ""
+gamesurgePassword = ""
+rconPassword = ""
+
+#maps
+mapList = [
+    "cp_badlands",
+    "cp_gullywash_final1",
+    "cp_snakewater",
+    "cp_granary",
+    "koth_pro_viaduct_rc3",
+    "cp_warmfront",
+    "cp_process_b9",
+    "koth_ashville_rc1",
+    "cp_yukon_final",
+    "cp_follower"]
+
+#pug settings
+captainStageList = ['a', 'b', 'a', 'b', 'b', 'a', 'a', 'b', 'b', 'a']
+classList = ['demo', 'medic', 'scout', 'soldier']
+formalTeam = ['demo', 'medic', 'scout', 'scout', 'soldier', 'soldier']
+
+#mumble
+voiceServer = {'ip':'xx.xx.xx.xx', 'port':'6687'}
+voicePass = ''
+advert = "Servers provided by XYZ"
+
