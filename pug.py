@@ -89,22 +89,22 @@ def add(userName, userCommand):
 
 def addGame(userName, userCommand):
     resetVariables()
-    global classList, gameServer, lastGameType, state, userLimit
+    global gameServer, lastGameType, state, userLimit
     if not setIP(userName, userCommand):
         return 0
     # Game type.
     if re.search('captain', userCommand):
-        classList = ['demo', 'medic', 'scout', 'soldier']
+        config.classList = ['demo', 'medic', 'scout', 'soldier']
         lastGameType = 'captain'
         state = 'captain'
         userLimit = 24
     elif re.search('highlander', userCommand):
-        classList = ['demo', 'engineer', 'heavy', 'medic', 'pyro', 'scout', 'sniper', 'soldier', 'spy']
+        config.classList = ['demo', 'engineer', 'heavy', 'medic', 'pyro', 'scout', 'sniper', 'soldier', 'spy']
         lastGameType = 'highlander'
         state = 'highlander'
         userLimit = 18
     else:
-        classList = ['demo', 'medic', 'scout', 'soldier']
+        config.classList = ['demo', 'medic', 'scout', 'soldier']
         lastGameType = 'normal'
         state = 'normal'
         userLimit = 12
@@ -227,9 +227,9 @@ def autoGameStart():
 
 def buildTeams():
     global userList
-    fullClassList = classList
+    fullClassList = config.classList
     if getTeamSize() == 6:
-        fullClassList = formalTeam
+        fullClassList = config.formalTeam
     for team in ['a', 'b']:
         for gameClass in fullClassList:
             assignUserToTeam(gameClass, 0, team, userList[getAPlayer(gameClass)])
@@ -238,7 +238,7 @@ def buildTeams():
 def captain(userName, params):
     global teamA, teamB
     if len(teamA) > 0 and len(teamB) < 6:
-        for user in getTeam(captainStageList[captainStage]):
+        for user in getTeam(config.captainStageList[captainStage]):
             if user['status'] == 'captain':
                 captainName = user['nick']
                 break
@@ -356,11 +356,10 @@ def executeCommand(userName, command, params):
         return 0
 
 def extractClasses(userCommand):
-    global classList
     classes = []
     commandList = string.split(userCommand, ' ')
     for i in commandList:
-        for j in classList:
+        for j in config.classList:
             if i == j:
                 classes.append(j)
     return classes
@@ -382,7 +381,7 @@ def findAwayUsers():
     return awayList
 
 def game(userName, userCommand):
-    global captainStageList, state
+    global state
     mode = userCommand.split(' ')
     if len(mode) <= 1:
         send("PRIVMSG " + config.channel + " :\x030,01The actual game mode is set to \"" + state + "\".")
@@ -392,13 +391,13 @@ def game(userName, userCommand):
         return 0
     if mode[1] == 'captain':
         if state == 'scrim':
-            captainStageList = ['a', 'b', 'a', 'b', 'b', 'a', 'a', 'b', 'b', 'a']
+            config.captainStageList = ['a', 'b', 'a', 'b', 'b', 'a', 'a', 'b', 'b', 'a']
             state = 'captain'
         else:
             send("NOTICE " + userName + " :You can't switch the game mode in this bot state.")
     elif mode[1] == 'scrim':
         if state == 'captain':
-            captainStageList = ['a', 'a', 'a', 'a', 'a'] 
+            config.captainStageList = ['a', 'a', 'a', 'a', 'a'] 
             state = 'scrim'
         else:
             send("NOTICE " + userName + " :You can't switch the game mode in this bot state.")
@@ -468,7 +467,7 @@ def getAvailableClasses():
         numberOfPlayersPerClass = {'demo':4, 'medic':4, 'scout':8, 'soldier':8}
     if getTeamSize() == 9:
         numberOfPlayersPerClass = {'demo':2, 'engineer':2, 'heavy':2, 'medic':2, 'pyro':2, 'scout':2, 'sniper':2, 'soldier':2, 'spy':2}
-    for gameClass in classList:
+    for gameClass in config.classList:
         if classCount(gameClass) < numberOfPlayersPerClass[gameClass]:
             availableClasses.append(gameClass)
     return availableClasses
@@ -504,8 +503,7 @@ def getLastTimeMedic(userName):
     return 0
 
 def getMap():
-    global mapList
-    return mapList[random.randint(0, (len(mapList) - 1))]
+    return config.mapList[random.randint(0, (len(config.mapList) - 1))]
 
 def getMedicRatioColor(medicRatio):
     if medicRatio >= 7:
@@ -575,9 +573,9 @@ def getRandomItemFromList(list):
         return []
 
 def getRemainingClasses():
-    global captainStage, captainStageList, formalTeam
-    remainingClasses = formalTeam[:]
-    team = getTeam(captainStageList[captainStage])
+    global captainStage
+    remainingClasses = config.formalTeam[:]
+    team = getTeam(config.captainStageList[captainStage])
     for user in team:
         if user['class'][0] in remainingClasses:
             remainingClasses.remove(user['class'][0])
@@ -612,7 +610,7 @@ def getTeam(team):
 
 def getTeamSize():
     teamSize = 6
-    if len(classList) == 9:
+    if len(config.classList) == 9:
         teamSize = 9
     return teamSize
 
@@ -646,7 +644,7 @@ def ip(userName, userCommand):
     commandList = string.split(userCommand, ' ')
     if len(commandList) < 2:
         if gameServer != '':
-            message = "\x030,01Server IP: \"connect " + gameServer + "; password " + password + "\". Servers are provided by Command Channel: \x0307,01https://commandchannel.com/"
+            message = "\x030,01Server IP: \"connect " + gameServer + "; config.voicePass " + config.voicePass + "\"." + config.advert
             send("PRIVMSG " + config.channel + " :" + message)
         return 0
     setIP(userName, userCommand)
@@ -674,8 +672,8 @@ def isAdminCommand(userName, userCommand):
     return 0
 
 def isAuthorizedCaptain(userName):
-    global captainStage, captainStageList, teamA, teamB
-    team = getTeam(captainStageList[captainStage])
+    global captainStage, teamA, teamB
+    team = getTeam(config.captainStageList[captainStage])
     for user in team:
         if user['status'] == 'captain' and user['nick'] == userName:
             return 1
@@ -851,12 +849,11 @@ def listeningTF2Servers():
                 cursor.execute('COMMIT;')
 
 def mumble(userName, params):
-    global voiceServer
-    message = "\x030,01Voice server IP: " + voiceServer['ip'] + ":" + voiceServer['port'] + "  Password: " + password + "  Download: http://download.mumble.com/en/mumble-1.2.3a.msi"
+    message = "\x030,01Voice server IP: " + config.voiceServer['ip'] + ":" + config.voiceServer['port'] + "  Password: " + config.voicePass + "  Download: http://download.mumble.com/en/mumble-1.2.3a.msi"
     send("PRIVMSG " + config.channel + " :" + message)
 
 def needsub(userName, userCommand):
-    global classList, subList
+    global subList
     commandList = string.split(userCommand, ' ')
     sub = {'class':'unspecified', 'id':getNextSubID(), 'server':'', 'steamid':'', 'team':'unspecified'}
     for command in commandList:
@@ -877,7 +874,7 @@ def needsub(userName, userCommand):
         sub['team'] = '\x034,01Red\x030,01'
     # Set the class.
     for argument in commandList:
-        if argument in classList:
+        if argument in config.classList:
             sub['class'] = argument
     subList.append(sub)
     printSubs()
@@ -892,8 +889,8 @@ def nickchange(connection, event):
         del userList[oldUserName]
 
 def pick(userName, userCommand):
-    global captainStage, captainStageList, classList, state, teamA, teamB, userList
-    if (len(captainStageList) >= 10 and (not len(teamA) or not len(teamB))) or (len(captainStageList) == 5 and not len(teamA)):
+    global captainStage, state, teamA, teamB, userList
+    if (len(config.captainStageList) >= 10 and (not len(teamA) or not len(teamB))) or (len(config.captainStageList) == 5 and not len(teamA)):
         send("NOTICE " + userName + " : The selection is not started yet.") 
         return 0
     commandList = string.split(userCommand, ' ')
@@ -907,7 +904,7 @@ def pick(userName, userCommand):
     gameClass = ''
     medicsRemaining = 0
     for command in commandList:
-        if command in classList:
+        if command in config.classList:
             gameClass = command
             commandsToDelete.append(counter)
         elif command == 'captain':
@@ -926,7 +923,7 @@ def pick(userName, userCommand):
             if userList[user]['nick'] == commandList[0]:
                 userFound = 1
                 break
-    team = getTeam(getOppositeTeam(captainStageList[captainStage]))
+    team = getTeam(getOppositeTeam(config.captainStageList[captainStage]))
     oppositeTeamHasMedic = 0
     for i in range(len(team)):
         if 'medic' in team[i]['class']:
@@ -961,7 +958,7 @@ def pick(userName, userCommand):
         send("NOTICE " + commandList[0] + " : " + getCaptainNameFromTeam(getPlayerTeam(userName)) + " picked you as " + gameClass) 
         send("NOTICE " + getCaptainNameFromTeam(getOppositeTeam(getPlayerTeam(userName))) + " : \x037" + userName + " picked " + commandList[0] + " as " + gameClass) 
         assignUserToTeam(gameClass, 0, getPlayerTeam(userName), userList[commandList[0]])
-        if captainStage < (len(captainStageList) - 1):
+        if captainStage < (len(config.captainStageList) - 1):
             captainStage += 1
             printCaptainChoices()
         else:
@@ -976,9 +973,9 @@ def pubmsg(connection, event):
     analyseIRCText(connection, event)
 
 def printCaptainChoices(printType = 'private'):
-    global classList, captainStage, captainStageList, userList
+    global captainStage, userList
     if printType == 'private':
-        captainName = getCaptainNameFromTeam(captainStageList[captainStage])
+        captainName = getCaptainNameFromTeam(config.captainStageList[captainStage])
         captainColor = '\x0312'
         followingColor = '\x035'
         protectedColor = '\x033'
@@ -990,7 +987,7 @@ def printCaptainChoices(printType = 'private'):
         followingColor = '\x030,01'
         protectedColor = '\x039,01'
         dataPrefix = "PRIVMSG " + config.channel + " :\x030,01"
-    for gameClass in classList:
+    for gameClass in config.classList:
         choiceList = []
         for userName in userList.copy():
             if gameClass in userList[userName]['class']:
@@ -1022,8 +1019,8 @@ def printSubs():
             send("PRIVMSG " + config.channel + " :" + "\x030,01ID = \"" + str(sub['id']) + "\", Class = \"" + sub['class'].capitalize() + "\", Server = \"" + sub['server'] + "\", Team = \"" + sub['team'] + "\"" + by)
 
 def printTeams():
-    global captainStageList, state, teamA, teamB
-    if len(captainStageList) >= 10:
+    global state, teamA, teamB
+    if len(config.captainStageList) >= 10:
         teamNames = ['Blue', 'Red']
         colors = ['\x0311,01', '\x034,01']
         teams = [teamA, teamB]
@@ -1164,9 +1161,9 @@ def removeLastEscapeCharacter(userCommand):
     return userCommand
 
 def resetVariables():
-    global captainStage, captainStageList, gameServer, teamA, teamB, userLimit, userList
+    global captainStage, gameServer, teamA, teamB, userLimit, userList
     captainStage = 0
-    captainStageList = ['a', 'b', 'a', 'b', 'b', 'a', 'a', 'b', 'b', 'a']
+    config.captainStageList = ['a', 'b', 'a', 'b', 'b', 'a', 'a', 'b', 'b', 'a']
     gameServer = ''
     removeUnremovedUsers()
     teamA = []
@@ -1247,7 +1244,7 @@ def sendStartPrivateMessages():
     for teamID in ['a', 'b']:
         team = getTeam(teamID)
         for user in team:
-            send("PRIVMSG " + user['nick'] + " :You have been assigned to the " + teamName[teamCounter] + " team. Connect as soon as possible to this TF2 server: \"connect " + gameServer + "; password " + password + ";\". Connect as well to the voIP server, for more information type \"!mumble\" in \"#tf2.pug\".")
+            send("PRIVMSG " + user['nick'] + " :You have been assigned to the " + teamName[teamCounter] + " team. Connect as soon as possible to this TF2 server: \"connect " + gameServer + "; password " + config.voicePass + ";\". Connect as well to the voIP server, for more information type \"!mumble\"")
             userCounter += 1
         teamCounter += 1
 
@@ -1375,7 +1372,7 @@ def sub(userName, userCommand):
         send("NOTICE " + userName + " :You must supply a valid substitute ID. Example: \"!sub 1\".")
         return 0
     subIndex = getSubIndex(id)
-    send("PRIVMSG " + userName + " :You are the substitute for a game that is about to start or that has already started. Connect as soon as possible to this TF2 server: \"connect " + subList[subIndex]['server'] + "; password " + password + ";\". Connect as well to the voIP server, for more information type \"!mumble\" in \"#tf2.pug\".")
+    send("PRIVMSG " + userName + " :You are the substitute for a game that is about to start or that has already started. Connect as soon as possible to this TF2 server: \"connect " + subList[subIndex]['server'] + "; password " + config.voicePass + ";\". Connect as well to the voIP server, for more information type \"!mumble\"")
     del(subList[subIndex])
     return 0
 
@@ -1385,7 +1382,7 @@ def need(userName, params):
     numberOfPlayersPerClass = {'demo':2, 'medic':2, 'scout':4, 'soldier':4}
     neededPlayers = 0
     captainsNeeded = 0
-    for gameClass in classList:
+    for gameClass in config.classList:
         if classCount(gameClass) < numberOfPlayersPerClass[gameClass]:
             needed = numberOfPlayersPerClass[gameClass] - classCount(gameClass)
             neededClasses[gameClass] = needed
@@ -1434,7 +1431,7 @@ def updateUserStatus(nick, escapedUserCommand):
     global awayList, userList
     numberOfMedics = 2
     numberOfPlayers = 12
-    if len(captainStageList) == 5:
+    if len(config.captainStageList) == 5:
         numberOfMedics = 1
         numberOfPlayers = 6
     elif getTeamSize() == 9:
@@ -1452,7 +1449,7 @@ def updateUserStatus(nick, escapedUserCommand):
             initGame()
 
 def welcome(connection, event):
-    server.send_raw("authserv auth " + nick + " " + config.gamesurgePassword)
+    server.send_raw("AUTH " + config.gamesurgeUser + " " + config.gamesurgePassword)
     server.send_raw("MODE " + nick + " +x")
     server.join(config.channel)
 
@@ -1466,10 +1463,7 @@ awayList = {}
 awayTimer = 0.0
 botID = 0
 captainStage = 0
-captainStageList = ['a', 'b', 'a', 'b', 'b', 'a', 'a', 'b', 'b', 'a']
-classList = ['demo', 'medic', 'scout', 'soldier']
 connectTimer = threading.Timer(0, None)
-formalTeam = ['demo', 'medic', 'scout', 'scout', 'soldier', 'soldier']
 gameServer = ''
 gamesurgeCommands = ["\\!access", "\\!addcoowner", "\\!addmaster", "\\!addop", "\\!addpeon", "\\!adduser", "\\!clvl", "\\!delcoowner", "\\!deleteme", "\\!delmaster", "\\!delop", "\\!delpeon", "\\!deluser", "\\!deop", "\\!down", "\\!downall", "\\!devoice", "\\!giveownership", "\\!resync", "\\!trim", "\\!unsuspend", "\\!upall", "\\!uset", "\\!voice", "\\!wipeinfo"]
 initTime = int(time.time())
@@ -1478,11 +1472,9 @@ lastGame = 0
 lastGameType = "normal"
 lastLargeOutput = time.time()
 lastUserPrint = time.time()
-mapList = ["cp_badlands", "cp_gullywash_final1", "cp_snakewater", "cp_granary", "koth_pro_viaduct_rc3", "cp_warmfront", "cp_process_b9", "koth_ashville_rc1", "cp_yukon_final", "cp_follower"]
 maximumUserLimit = 24
 minuteTimer = time.time()
 nominatedCaptains = []
-password = 'tf2pug'
 pastGames = []
 printTimer = threading.Timer(0, None)
 startMode = 'automatic'
@@ -1496,7 +1488,7 @@ subList = []
 userCommands = ["!add", "!captain", "!game", "!ip", "!last", "!limit", "!list", "!man", "!mumble", "!need", "!needsub", "!pick", "!players", "!remove", "!scramble", "!stats", "!status", "!sub", "!whattimeisit"]
 userLimit = 12
 userList = {}
-voiceServer = {'ip':'tf2pug.commandchannel.com', 'port':'31472'}
+
 
 connection = psycopg2.connect('dbname=tf2ib host=127.0.0.1 user=tf2ib password=jw8s0F4')
 
@@ -1532,6 +1524,8 @@ commandMap = {
     "!sub": sub,
     #"!votemap": votemap,
 }
+irclib.DEBUG = 1
+
 # Create an IRC object
 irc = irclib.IRC()
 
