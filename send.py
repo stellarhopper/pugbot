@@ -6,7 +6,7 @@ import psycopg2
 import sys
 import time
 
-irclib.DEBUG = 1
+#irclib.DEBUG = 1
 
 def checkConnection():
     global connectTimer
@@ -15,18 +15,21 @@ def checkConnection():
     server.join(config.channel)
 
 def connect():
+    print [config.network, config.port, nick, name]
     server.connect(config.network, config.port, nick, ircname = name)
 
 def welcome(connection, event):
-    server.join("#tf2.pug")
+    print nick + ' welcome seen, will auth!'
+    server.send_raw("AUTH " + nick + " " + passwd)
+    server.send_raw("MODE " + nick + " +x")
+    server.join(config.channel)
 
 nick = 'Pug-Messenger'
-ip = ''
 if len(sys.argv) == 2:
     nick = sys.argv[1]
-elif len(sys.argv) == 3:
-    nick = sys.argv[1]
-    ip = sys.argv[2]
+
+passwd = config.irc_auths[nick]
+print [nick, passwd]
 
 # Create an IRC object
 name = 'BOT'
@@ -34,7 +37,7 @@ irc = irclib.IRC()
 
 # Create a server object, connect and join the channel
 server = irc.server()
-server.connect(config.network, config.port, nick, ircname = name, localaddress = ip)
+connect()
 irc.add_global_handler('welcome', welcome)
 
 database = psycopg2.connect('dbname=tf2ib host=localhost user=tf2ib password=' + config.databasePassword)

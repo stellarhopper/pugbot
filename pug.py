@@ -8,6 +8,7 @@ import random
 import re
 import string
 import SRCDS
+import sys
 import thread
 import threading
 import time
@@ -1449,13 +1450,9 @@ def updateUserStatus(nick, escapedUserCommand):
             initGame()
 
 def welcome(connection, event):
-    server.send_raw("AUTH " + config.gamesurgeUser + " " + config.gamesurgePassword)
+    server.send_raw("AUTH " + nick + " " + passwd)
     server.send_raw("MODE " + nick + " +x")
     server.join(config.channel)
-
-# Connection information
-nick = 'PUG-BOT'
-name = 'BOT'
 
 adminCommands = ["!endgame", "!replace", "!restart"]
 adminList = {}
@@ -1493,7 +1490,6 @@ userList = {}
 connection = psycopg2.connect('dbname=tf2ib host=127.0.0.1 user=tf2ib password=jw8s0F4')
 
 commandPat = re.compile(r'(?P<command>\!\w+)\s?(?P<params>.*)')
-
 commandMap = {
     "!add": add,
     "!addgame": addGame,
@@ -1524,8 +1520,16 @@ commandMap = {
     "!sub": sub,
     #"!votemap": votemap,
 }
-irclib.DEBUG = 1
+#irclib.DEBUG = 1
 
+nick = 'PUG-BOT'
+name = 'BOT'
+if len(sys.argv) == 2:
+    nick = sys.argv[1]
+
+passwd = config.irc_auths[nick]
+print [nick, passwd]
+    
 # Create an IRC object
 irc = irclib.IRC()
 
@@ -1543,6 +1547,8 @@ irc.add_global_handler('privnotice', pubmsg)
 irc.add_global_handler('pubnotice', pubmsg)
 irc.add_global_handler('quit', drop)
 irc.add_global_handler('welcome', welcome)
+
+
 
 # Start the server listening.
 thread.start_new_thread(listeningTF2Servers, ())
