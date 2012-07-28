@@ -123,9 +123,13 @@ def analyseIRCText(connection, event):
     
     if userName in userList:
         updateUserStatus(userName, escapedUserCommand)
-    if re.match('^.*\\\\ \\\\\(.*\\\\\)\\\\ has\\\\ access\\\\ \\\\\x02\d*\\\\\x02\\\\ in\\\\ \\\\' + escapedChannel + '\\\\.$', escapedUserCommand):
-        adminList[userCommand.split()[0]] = int(userCommand.split()[4].replace('\x02', ''))
-        
+    if config.network == "irc.quakenet.org":
+        if re.match('^Flags\\\\ for\\\\ .*\\\\ on\\\\ \\\\' + escapedChannel + '\\\\:\\\\ \\\\[+].*[on].*$', escapedUserCommand):
+            adminList[userCommand.split()[2]] = 200
+    else:
+        if re.match('^.*\\\\ \\\\\(.*\\\\\)\\\\ has\\\\ access\\\\ \\\\\x02\d*\\\\\x02\\\\ in\\\\ \\\\' + escapedChannel + '\\\\.$', escapedUserCommand):
+            adminList[userCommand.split()[0]] = int(userCommand.split()[4].replace('\x02', ''))
+
     match = commandPat.match(userCommand)
     if not match:
         return
@@ -652,7 +656,11 @@ def ip(userName, userCommand):
 
 def isAdmin(userName):
     global adminList
-    server.send_raw("PRIVMSG ChanServ :" + config.channel + " a " + userName)
+    if config.network == "irc.quakenet.org":
+        print "PRIVMSG Q CHANLEV:" + config.channel + " " + userName
+        server.send_raw("PRIVMSG Q : CHANLEV " + config.channel + " " + userName)
+    else:
+        server.send_raw("PRIVMSG ChanServ :" + config.channel + " a " + userName)
     counter = 0
     while not userName in adminList and counter < 20:
         irc.process_once(0.2)
@@ -1520,7 +1528,6 @@ commandMap = {
     "!sub": sub,
     #"!votemap": votemap,
 }
-#irclib.DEBUG = 1
 
 nick = 'PUG-BOT'
 name = 'BOT'
