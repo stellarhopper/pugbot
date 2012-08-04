@@ -223,10 +223,7 @@ def autoGameStart():
     cursor = connection.cursor()
     cursor.execute('UPDATE servers SET last = 0 WHERE last < 0 AND botID = %s', (botID,))
     cursor.execute('COMMIT;')
-    if lastGameType == 'captain':
-        lastGameType = 'normal'
-    elif lastGameType == 'normal':
-        lastGameType = 'captain'
+    lastGameType = 'highlander'
     if server and startMode == 'automatic':
         addGame(nick, '!addgame ' + lastGameType + ' ' + server['ip'] + ':' + server['port'])
 
@@ -1491,7 +1488,7 @@ scrambleList = []
 startGameTimer = threading.Timer(0, None)
 subList = []
 userCommands = ["!add", "!captain", "!game", "!ip", "!last", "!limit", "!list", "!man", "!mumble", "!need", "!needsub", "!pick", "!players", "!remove", "!scramble", "!stats", "!status", "!sub", "!whattimeisit"]
-userLimit = 12
+userLimit = 18
 userList = {}
 
 
@@ -1533,9 +1530,7 @@ nick = 'PUG-BOT'
 name = 'BOT'
 if len(sys.argv) == 2:
     nick = sys.argv[1]
-
 passwd = config.irc_auths[nick]
-print [nick, passwd]
     
 # Create an IRC object
 irc = irclib.IRC()
@@ -1554,8 +1549,6 @@ irc.add_global_handler('privnotice', pubmsg)
 irc.add_global_handler('pubnotice', pubmsg)
 irc.add_global_handler('quit', drop)
 irc.add_global_handler('welcome', welcome)
-
-
 
 # Start the server listening.
 thread.start_new_thread(listeningTF2Servers, ())
