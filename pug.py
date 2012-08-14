@@ -17,7 +17,7 @@ import time
 
 def update_topic():
     global userList
-    topic = '[ ' + str(len(userList)) + '/' + str(len(config.classList)) + ' ]'
+    topic = '[ ' + str(len(userList)) + '/' + str(2 * len(config.classList)) + ' ]'
     for a_class in config.classList:
         topic += '[ ' + a_class + ': '
         for player in userList:
