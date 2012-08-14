@@ -15,6 +15,19 @@ import time
 
 #irclib.DEBUG = 1
 
+def update_topic():
+    global userList
+    topic = '[ ' + str(len(userList)) + '/' + str(len(config.classList)) + ' ]'
+    for a_class in config.classList:
+        topic += '[ ' + a_class + ': '
+        for player in userList:
+            if userList[player]['command'] == a_class:
+                topic += player + ', '
+        topic += ' ]'
+    topic += ''
+    #print 'topic: ' + topic
+    server.send_raw("PRIVMSG Q : SETTOPIC " + config.channel + " " + topic)
+
 def add(userName, userCommand):
     global state, userLimit, userList
     print "State : " + state
@@ -319,7 +332,8 @@ def createUser(userName, userCommand, userAuthorizationLevel):
     user['nick'] = userName
     if state == 'captain' or state == 'picking':
         if len(user['class']) > 0:
-            send("NOTICE " + userName + " : " + "You sucessfully subscribed to the picking process as: " + ", ".join(user['class']) + "")
+            #send("NOTICE " + userName + " : " + "You sucessfully subscribed to the picking process as: " + ", ".join(user['class']) + "")
+            update_topic()
     return user
 
 def drop(connection, event):
@@ -646,7 +660,7 @@ def ip(userName, userCommand):
     commandList = string.split(userCommand, ' ')
     if len(commandList) < 2:
         if gameServer != '':
-            message = "\x030,01Server IP: \"connect " + gameServer + "; config.voicePass " + config.voicePass + "\"." + config.advert
+            message = "\x030,01Server IP: \"connect " + gameServer + "; password " + config.servPass + "\"." + config.advert
             send("PRIVMSG " + config.channel + " :" + message)
         return 0
     setIP(userName, userCommand)
@@ -654,7 +668,6 @@ def ip(userName, userCommand):
 def isAdmin(userName):
     global adminList
     if config.network == "irc.quakenet.org":
-        print "PRIVMSG Q CHANLEV:" + config.channel + " " + userName
         server.send_raw("PRIVMSG Q : CHANLEV " + config.channel + " " + userName)
     else:
         server.send_raw("PRIVMSG ChanServ :" + config.channel + " a " + userName)
@@ -975,6 +988,10 @@ def pick(userName, userCommand):
 def players(userName, params):
     printCaptainChoices('channel')
 
+def topic_wrapper(userName, params):
+    #update_topic()
+    send("PRIVMSG " + config.channel + " :" + "\x030,01Do a /topic command to view players added up")
+
 def pubmsg(connection, event):
     analyseIRCText(connection, event)
 
@@ -1089,7 +1106,8 @@ def listPlayers(userName, params):
 def printUserList():
     global lastUserPrint, printTimer, state, userList
     if (time.time() - lastUserPrint) > 5:
-        listPlayers('', '')
+        #listPlayers('', '')
+        update_topic()
     else:
         printTimer.cancel()
         printTimer = threading.Timer(5, printUserList)
@@ -1458,6 +1476,7 @@ def welcome(connection, event):
     server.send_raw("AUTH " + nick + " " + passwd)
     server.send_raw("MODE " + nick + " +x")
     server.join(config.channel)
+    update_topic()
 
 adminCommands = ["!endgame", "!replace", "!restart"]
 adminList = {}
@@ -1506,7 +1525,8 @@ commandMap = {
     "!ip": ip,
     "!last": last,
     "!limit": limit,
-    "!list": players,
+    #"!list": players,
+    "!list": topic_wrapper,
     "!man": help,
     "!manual": manual,
     "!mumble": mumble,
@@ -1514,7 +1534,8 @@ commandMap = {
     "!needsub": needsub,
     #"!notice": notice,
     "!pick": pick,
-    "!players": listPlayers,
+    #"!players": listPlayers,
+    "!players": topic_wrapper,
     "!protect": protect,
     "!replace": replace,
     "!remove": remove,
