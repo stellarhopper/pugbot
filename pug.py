@@ -16,7 +16,7 @@ import time
 #irclib.DEBUG = 1
 
 def update_topic():
-    global userList
+    global userList, cur_map
     topic = '[ ' + str(len(userList)) + '/' + str(2 * len(config.classList)) + ' ]'
     for a_class in config.classList:
         topic += '[ ' + a_class + ': '
@@ -24,9 +24,21 @@ def update_topic():
             if userList[player]['command'] == a_class:
                 topic += player + ', '
         topic += ' ]'
+    topic += "  [ MAP: " + cur_map + " ]"
     topic += ''
     #print 'topic: ' + topic
     server.send_raw("PRIVMSG Q : SETTOPIC " + config.channel + " " + topic)
+
+def showMap(userName, userCommand):
+    update_topic()
+
+def getMap():
+    global cur_map
+    cur_map = config.mapList[random.randint(0, (len(config.mapList) - 1))]
+    update_topic()
+
+def nextmap(userName, userCommand):
+    getMap()
 
 def add(userName, userCommand):
     global state, userLimit, userList
@@ -228,7 +240,7 @@ def authorize(userName, userCommand, userLevel = 1):
         send("NOTICE " + userName + " : You successfully " + authorizationText + " \"" + commandList[1] + "\" to play in \"" + config.channel + "\".") 
 
 def autoGameStart():
-    global lastGameType
+    global lastGameType, cur_map
     if state == 'idle':
         server = getAvailableServer()
     else:
@@ -237,6 +249,8 @@ def autoGameStart():
     cursor.execute('UPDATE servers SET last = 0 WHERE last < 0 AND botID = %s', (botID,))
     cursor.execute('COMMIT;')
     lastGameType = 'highlander'
+    getMap()
+    print "got map " + cur_map
     if server and startMode == 'automatic':
         addGame(nick, '!addgame ' + lastGameType + ' ' + server['ip'] + ':' + server['port'])
 
@@ -518,9 +532,6 @@ def getLastTimeMedic(userName):
         return row[0]
     return 0
 
-def getMap():
-    return config.mapList[random.randint(0, (len(config.mapList) - 1))]
-
 def getMedicRatioColor(medicRatio):
     if medicRatio >= 7:
         return "\x039,01"
@@ -781,11 +792,13 @@ def initGame():
         players(nick, '')
 
 def initServer():
-    global gameServer, lastGame
+    global gameServer, lastGame, cur_map
     try:
         lastGame = time.time()
         TF2Server = SRCDS.SRCDS(string.split(gameServer, ':')[0], int(string.split(gameServer, ':')[1]), config.rconPassword, 10)
-        TF2Server.rcon_command('changelevel ' + getMap())
+        if cur_map == '':
+            getMap()
+        TF2Server.rcon_command('changelevel ' + cur_map)
     except:
         return 0
 
@@ -1386,7 +1399,7 @@ def sub(userName, userCommand):
     if len(subList) == 0:
         send("NOTICE %s :A sub is not needed at this time." % (userName,))
         return
-        
+
     commandList = string.split(userCommand)
     id = ''
     for argument in commandList:
@@ -1403,9 +1416,13 @@ def sub(userName, userCommand):
 def need(userName, params):
     """display players needed"""
     neededClasses = {}
-    numberOfPlayersPerClass = {'demo':2, 'medic':2, 'scout':4, 'soldier':4}
+    numberOfPlayersPerClass = {}
     neededPlayers = 0
     captainsNeeded = 0
+
+    for gameClass in config.classList:
+        numberOfPlayersPerClass[gameClass] = ((config.classList).count(gameClass)) * 2
+
     for gameClass in config.classList:
         if classCount(gameClass) < numberOfPlayersPerClass[gameClass]:
             needed = numberOfPlayersPerClass[gameClass] - classCount(gameClass)
@@ -1414,7 +1431,7 @@ def need(userName, params):
 
     if state == 'captain' and countCaptains() < 2:
         captainsNeeded = 2 - countCaptains()
-        
+
     if neededPlayers == 0 and captainsNeeded == 0:
         send("PRIVMSG %s :\x030,01no players needed." % (config.channel,))
     else:
@@ -1478,7 +1495,7 @@ def welcome(connection, event):
     server.join(config.channel)
     update_topic()
 
-adminCommands = ["!endgame", "!replace", "!restart"]
+adminCommands = ["!endgame", "!replace", "!restart", "!nextmap"]
 adminList = {}
 awayList = {}
 awayTimer = 0.0
@@ -1506,9 +1523,10 @@ restart = 0
 scrambleList = []
 startGameTimer = threading.Timer(0, None)
 subList = []
-userCommands = ["!add", "!captain", "!game", "!ip", "!last", "!limit", "!list", "!man", "!mumble", "!need", "!needsub", "!pick", "!players", "!remove", "!scramble", "!stats", "!status", "!sub", "!whattimeisit"]
+userCommands = ["!add", "!captain", "!game", "!map", "!ip", "!last", "!limit", "!list", "!man", "!mumble", "!need", "!needsub", "!pick", "!players", "!remove", "!scramble", "!stats", "!status", "!sub", "!whattimeisit"]
 userLimit = 18
 userList = {}
+cur_map = ''
 
 
 connection = psycopg2.connect('dbname=tf2ib host=127.0.0.1 user=tf2ib password=jw8s0F4')
@@ -1545,6 +1563,8 @@ commandMap = {
     "!stats": stats,
     "!sub": sub,
     #"!votemap": votemap,
+    "!map": showMap,
+    "!nextmap": nextmap,
 }
 
 nick = 'PUG-BOT'
